@@ -21,33 +21,9 @@ import requests
 import sys
 import time
 from datetime import date, datetime, timedelta
-from threading import Timer
-import thread
 
 reload(sys)
 sys.setdefaultencoding('utf8')
-
-# 全局变量，如下设定不要变
-# sportId:足球
-sportId = 1
-# pageType: 1:今日,2:早盘,3:滚球,4:我的收藏,5:连串过关
-pageType = 1
-# programmeId: 定义联赛,所有联赛的就留0; 如果有联赛,这个属性将被隐藏,用competitionId代替.现在已知的方法不管联赛
-programmeId = 0
-# uiBetType: 玩法, am:买大小 fth1X2:胜负平;其它的玩法不管
-uiBetType = "am"
-# moreBetEvent: 是否点击了"更多投注"按钮.不点
-moreBetEvent = "null"
-# displayView: 如何显示.
-displayView = 2
-# pageNo: 第一页, 后续按照1,2,3,4编下去
-pageNo = 0
-# competitionIds:什么比赛, 每个联赛有个固定的值,26272是澳甲联赛的代号
-competitionIds = ""
-# oddsType: 欧洲盘, 2为香港盘, 3马来盘, 4印尼盘
-oddsType = 2
-# sortBy: 1为热门排序, 2为时间排序
-sortBy = 2
 
 # 全局变量，定义全局变量容器
 # 定时开始时间,格式2016-01-12 20:34:45
@@ -137,127 +113,8 @@ leagueWhiteList = [
     27250  # 法国乙组
 ]
 # 有关这个网站的所有链接:下单、登入，添加关注，下单，余额
-siteUrls = {
-    "odds": "http://sb-jxf.prdasbbwla1.com/zh-cn/OddsService/GetOdds?", "login": "http://www.uedfa.org/zh-cn/member/login.aspx?action=login", "add": "http://sb.uedwin.com/zh-cn/BetslipService/Add", "bet": "http://sb.uedwin.com/zh-cn/BetslipService/PlaceBet", "balance": "http://sb.uedwin.com/zh-cn/UserService/GetBalance?",
-    "human": "http://www.wellbet228.net/zh-cn/sportsbook.php"
-}
 
-# 发送数据更新请求,更新后的数据存在全局变量中
-def Request():
-    # leagues是抓回来的数据容器
-    global leagues
-    # 选择哪个站点,吉祥坊和UED用的一套数据
-    link = siteUrls['odds']
-    # 生成时间戳
-    timeStamp = str(int(time.time() * 1000))
-    # 是否第一次读取，如果是，强制获得球队名称等信息。未来改为“非第一次”加快速度
-    isFirstLoad = "true"
-    # 标记两种数据更新请求: ture,只请求更新inplay区域的; false,更新整页
-    isInplay = "true"  
-    # 定义链接请求参数，已调好，不要动
-    payload = {
-        "_": timeStamp, 
-        "moreBetEvent": moreBetEvent, 
-        "isFirstLoad": "true",
-        "uiBetType": uiBetType, 
-        "programmeId": programmeId, 
-        "pageType": pageType, 
-        "sportId": sportId
-    }
-    # 抓回来的是解码json生成的dict文件
-    response = requests.get(link, payload).json() 
-    # 滚球信息dict,response的子集
-    iotLeagues = []  
-    # 今日信息dict,response的子集，已开始的比赛
-    notLeagues = []
-    # 重新合成抓回来的数据
-    if 'egs' in response['i-ot'].keys():
-        # "滚球"里面的联赛
-        iotLeagues = response['i-ot']['egs']  
-    if 'egs' in response['n-ot'].keys(): 
-        # 现阶段只考虑已开始的比赛 
-        notLeagues = response['n-ot']['egs']
-    leagues = iotLeagues + notLeagues
 
-# 处理数据,很多层,小心每一层到底是list还是dict,dict就用['es'],list就一定搞遍历(for)
-# 以下筛选可以关注的offer,目的是把所有可以投注的offer筛出来，然后让每个offer实体各自去更新
-# 筛选offer交给函数，买不买交给对象
-def Process():  
-    # 整体开始
-    global allGameBestOffers 
-    # 先把全局变量清空了
-    allGameBestOffers = []
-    # 选择联赛开始，对每一联赛,进行如下操作
-    for league in leagues:  
-        leagueK = league['c']['k']  # 联赛编号
-        leagueName = league['c']['n']  # 联赛名字
-        # 如下是联赛必须符合的几个条件
-        leagueCondition1 = not(u"特别" in leagueName)  # 条件：排除特别投注
-        leagueCondition2 = not(u"分钟" in leagueName)  # 条件：排除非全场比赛的（如只赌上半场）
-        # 条件：如果使用白名单，必须是在联赛白名单内的，否则所有都可
-        if useLeagueWhiteList:
-            leagueCondition3 = leagueK in leagueWhiteList
-        else:
-            leagueCondition3 = True
-        # 如果全部符合
-        if leagueCondition1 and leagueCondition2 and leagueCondition3:
-            # 选择比赛开始
-            for game in league['es']:  # 对每一场比赛,进行如下操作
-                # 本场比赛所有smalloffers合集,用于存放该轮选好的offer,最后排序后添加到大offer里面
-                thisGameSmallOffers = []  
-                gameK = game['k']  # 比赛编号
-                hostTeam = game['i'][0]  # 主队名字
-                awayTeam = game['i'][1]  # 客队名称
-                gameDate = game['i'][4]  # 比赛日期,格式 日/月
-                gameTime = game['i'][5]  # 现在进行到多少时间,如果还没有开始就显示什么时候开始
-                hostTeamScore = game['i'][10]  # 主队得分情况
-                awayTeamScore = game['i'][11]  # 客队得分情况
-                gameHalf = game['i'][12]  # 上下半场,中场TH,用于判断比赛是否开始
-                 # 如果有买大小的盘口的话
-                if 'ou' in game['o'].keys(): 
-                    offerNumber = len(game['o']['ou']) / 8  # 到底有多少组offer
-                    # 如下是比赛必须符合的几个条件
-                    gameCondition1 = gameHalf != "ET"  # 条件：不能是加时赛的
-                    gameCondition2 = gameHalf != "Pens"  # 条件：不能买点球的
-                    gameCondition3 = gameHalf != ""  # 条件：必须是已开局的比赛
-                    # 如果全部符合
-                    if gameCondition1 and gameCondition2 and gameCondition3:
-                        # 添加offer开始
-                        i = 0
-                        for item in range(0, offerNumber):  # 生成多个bet offer
-                            # 买大盘口[1]
-                            bigPosition = game['o']['ou'][i * 8 + 1]  
-                            # 买小盘口[3]和主队盘口应该完全一样
-                            smallPosition = game['o']['ou'][i * 8 + 3]
-                            # 买大赔率编号[4]
-                            bigOddsNumber = game['o']['ou'][i * 8 + 4]
-                            # 买大赔率[5]
-                            bigOdds = game['o']['ou'][i * 8 + 5]  
-                            # 买小赔率编号[6]
-                            smallOddsNumber = game['o']['ou'][i * 8 + 6]
-                            # 买小赔率[7]
-                            smallOdds = game['o']['ou'][i * 8 + 7]  
-                            # 如下是offer必须符合的几个条件
-                            offerCondition1 = not("/" in smallPosition)  # 条件：盘口不能是双下注（同时下注相邻两个盘口）
-                            offerCondition2 = smallOdds > 0  # 条件：确保有赔率
-                            offerCondition3 = smallPosition > 0  # 条件：确保有盘口
-                            # 如果全部符合
-                            if offerCondition1 and offerCondition2 and offerCondition3:
-                                # 买小（smallOffer）是我们玩的主要东西
-                                smallOffer = leagueK, leagueName, gameK, hostTeam, awayTeam, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore, bigPosition, smallPosition, bigOdds, smallOdds, bigOddsNumber, smallOddsNumber
-                                # 把这个比赛所有小都凑到一起（一个比赛不止一个smallOffer）
-                                thisGameSmallOffers.append(smallOffer)
-                            i += 1
-                # 如果有符合上述条件的offer
-                if thisGameSmallOffers:  
-                    # 按照smallposition大小排序，只卖其中最大那个
-                    thisGameSmallOffers = sorted(thisGameSmallOffers, key=lambda smallOffer: smallOffer[11], reverse=True)  
-                    thisGameBestOffer = thisGameSmallOffers[0]  # 排序后选第一个
-                    # 把本场比赛最好的offer加到全局储存容器内,这些数据可以用来更新，不全部可以用来创建
-                    allGameBestOffers.append(thisGameBestOffer)
-                    # thisGameBestPosition = max(thisGameSmallPositions)
-                    # lowestSmallOdd = thisGameSmallOffers[-1] #暂时用不上,之后可能算法会改
-                    
 # 添加新offer（也是game，有唯一性）实例
 def addNewGame(): 
     # 如下是添加offer必须的几个条件 
@@ -309,10 +166,11 @@ class Offer:
         self.smallPosition = smallPosition
         self.bigOdds = bigOdds
         self.bigOddsNumber = bigOddsNumber
-        self.bigOddsNumberValue = "" # 提取数字部分 
         self.smallOdds = smallOdds
-        self.smallOddsNumber = smallOddsNumber # 提取数字部分
-        self.smallOddsNumberValue = "" 
+        self.smallOddsNumber = smallOddsNumber 
+        self.smallOddsNumberValue = self.smallOddsNumber[1:] # 小盘口编号除去字母部分
+        self.bigOddsNumberValue = self.bigOddsNumber[1:]  # 大盘口编号除去字母部分
+        
         # 变量：根据数据流的赋值加工、计算所得
         self.maxSmallPosition = 0 # 历史上最大的盘口（用于检测是否已经有盘口超过初始盘口）
         self.positionTrend = "" # 盘口变化趋势（与上一次相比）
@@ -326,7 +184,7 @@ class Offer:
         self.updateCounter = 0  # 更新多少次，用于指导写入
         self.readySecondBetCounter = 0  # 记录在盘口回归后, 有几轮更新
         self.focusBigOddStr = ""
-        self.scoresStr = ""
+        self.scoresStr = "" # 显示比分
         self.firstBetRecord = ""  # 第一次下注详情
         self.firstBetSmallOdd = float(0.0)  # 第一次下注赔率
         self.firstBetSmallPostion = float(0.0)  # 第一次下注盘口，数字变量（小）,第二次盘口应该和这个一样
@@ -397,41 +255,41 @@ class Offer:
                     self.bigOddsNumber = allGameBestOffer[14]
                 if allGameBestOffer[15] != "":
                     self.smallOddsNumber = allGameBestOffer[15]
-
-                # 小盘口编号除去字母部分
-                self.smallOddsNumberValue = self.smallOddsNumber[1:]
-                self.bigOddsNumberValue = self.bigOddsNumber[1:]  # 大盘口编号除去字母部分
-                self.scoresStr = str(self.hostTeamScore +
-                                     ":" + self.awayTeamScore)
-
-                # 没有时间信息，有历史记录，是中场
+                # 更新一系列信息
+                # 更新比分显示
+                self.scoresStr = str(self.hostTeamScore +":" + self.awayTeamScore)
+                # 没有时间信息，但是有历史记录，是中场
                 if allGameBestOffer[6] == "" and len(self.history) > 1 and self.history[-1][6] > "44:00" and allGameBestOffer[7] == "HT":
                     self.gameStatus = u"[中]"
-                # 没有时间信息，最后一次大于制定时间，是完毕
+                # 没有时间信息，最后一次大于制定时间，是比赛已结束
                 elif len(self.history) > 1 and self.gameTime >= latestUpdateTime:
                     self.gameStatus = u"[终]"
-                # 有时间信息，是00
+                # 比赛正准备开始
                 elif (allGameBestOffer[6] == "" or self.gameTime == "00:00") and allGameBestOffer[7] == "":
                     self.gameStatus = u"[等]"
+                # 上半场
                 elif self.gameHalf == "1H":
-                    self.gameStatus = u"[上]"  # 上半场
+                    self.gameStatus = u"[上]"
+                # 下半场
                 elif self.gameHalf == "2H":
-                    self.gameStatus = u"[下]"  # 下半场
+                    self.gameStatus = u"[下]"
+                # 比赛暂停
                 elif len(self.history) > 1 and allGameBestOffer[6] == self.history[-1][6] and self.history[-1][6] > "00:00":
                     self.gameStatus = u"[停]"
+                # 进入加时赛
                 elif self.gameHalf == "ET":
                     self.gameStatus = "[加]"
+                # 正在点球
                 elif self.gameHalf == "Pens":
                     self.gameStatus == "[点]"
                 else:
                     self.gameStatus == "[  ]"
-
-    def status(self):  # 定义各种符号；根据变化更改状态变量
-
+  
         # 如果没到最后可更新时间，就继续更新
         self.updateAble = cmp(latestUpdateTime, self.gameTime) == 1
-
-        if len(self.history) > 2:  # 刚开始的时候没有历史记录，不显示
+        # 刚开始的时候没有历史记录，趋势都为"→"
+        if len(self.history) > 2:  
+            # 已经抓取两次后，开始判断盘口正在趋势
             if self.smallPosition != "" and self.history[-2][11] != "":
                 if self.smallPosition == self.history[-2][11]:
                     self.positionTrend = "→"
@@ -441,6 +299,7 @@ class Offer:
                     self.positionTrend = "↓"
             else:
                 self.positionTrend = "? "
+            # 买小赔率的变化趋势
             if self.smallOdds != "0.00" and self.history[-2][13] != "0.00":
                 if self.smallOdds == self.history[-2][13]:
                     self.smallOddTrend = "→"
@@ -450,7 +309,7 @@ class Offer:
                     self.smallOddTrend = "↓"
             else:
                 self.smallOddTrend = "? "
-
+            # 买大赔率的变化趋势
             if self.bigOdds != "0.00" and self.history[-2][12] != "0.00":
                 if self.bigOdds == self.history[-2][12]:
                     self.bigOddTrend = "→"
@@ -460,40 +319,44 @@ class Offer:
                     self.bigOddTrend = "↓"
             else:
                 self.bigOddTrend = "? "
+        # 没有两次历史，暂不判断趋势
         else:
             self.positionTrend = "→"
             self.smallOddTrend = "→"
             self.bigOddTrend = "→"
-
+        # 显示是否已下注
         if self.firstBet == True:
             self.firstBetStr = u"[首]"
         else:
             self.firstBetStr = u"[  ]"
-
         if self.secondBet == True:
             self.secondBetStr = u"[补]"
         else:
             self.secondBetStr = u"[  ]"
-
-        if self.firstBetRecord != "":  # 首注后，把盘口转化为浮点，好和后面进球的整数比较
+        # 首注后，把盘口转化为浮点，好和后面进球的整数比较
+        if self.firstBetRecord != "":  
             self.firstBetSmallPostion = float(self.firstBetRecord[11])
         else:
             self.firstBetSmallPostion = float(0.0)
-
-        # 盘口没有比买的时候更大
+        # 如果已首注，且最大盘口不等于首注
         if self.firstBetSmallPostion > 0 and float(self.maxSmallPosition) != self.firstBetSmallPostion:
+            # 出问题了：需要等待补注
             self.betPositionTrend = " ?"
             self.waitSecondBet = True
         else:
+            # 没问题显示√
             self.betPositionTrend = "√"
-
-        if self.waitSecondBet:  # 盘口曾经高过
-            if self.smallPosition == self.firstBetRecord[11]:  # 盘口又回归了
+        # 如果已等待补注
+        if self.waitSecondBet:
+            # 盘口又回归了
+            if self.smallPosition == self.firstBetRecord[11]: 
+                # 等待补注的计数器加1 
                 self.readySecondBetCounter = self.readySecondBetCounter + 1
-
+        # 当等待补注的时间够了后，补注
         if self.readySecondBetCounter > (secondBetWaitTime / loopTime - 1):
             self.readySecondBet = True
 
+    # 显示全部分离，此处只抛出要显示的内容，不直接打印
     def display(self):
         self.printColor = COLOR.WHITE
         if self.winLose == u"[赢]" and self.betPositionTrend == "√":
@@ -505,19 +368,20 @@ class Offer:
         else:
             self.printColor = COLOR.WHITE
 
-        cPrint(u" │ %s%s%s %s │  %s:%s │ 买 %s%s │  盘 %s%s│ 高 %s │ 大 %s%s│ 小 %s%s│ %s %s │ %s:%s " % (self.firstBetStr, self.secondBetStr, self.winLose, str(self.margin).rjust(5), self.hostTeamScore, self.awayTeamScore, str(self.firstBetSmallPostion).rjust(
-            3), self.betPositionTrend, self.smallPosition.rjust(3), self.positionTrend, self.maxSmallPosition.rjust(3), self.bigOdds, self.bigOddTrend, self.smallOdds, self.smallOddTrend, self.gameTime, self.gameStatus, self.hostTeam, self.awayTeam), self.printColor)
+        cPrint(u" │ %s%s%s %s │  %s:%s │ 买 %s%s │  盘 %s%s│ 高 %s │ 大 %s%s│ 小 %s%s│ %s %s │ %s:%s " % (self.firstBetStr, self.secondBetStr, self.winLose, str(self.margin).rjust(5), self.hostTeamScore, self.awayTeamScore, str(self.firstBetSmallPostion).rjust(3), self.betPositionTrend, self.smallPosition.rjust(3), self.positionTrend, self.maxSmallPosition.rjust(3), self.bigOdds, self.bigOddTrend, self.smallOdds, self.smallOddTrend, self.gameTime, self.gameStatus, self.hostTeam, self.awayTeam), self.printColor)
 
-    def firstBetAction(self):  # 下注
-        if self.firstBet == False:  # 还没有投注
-            self.firstBetCondition1 = self.gameTime > earliestFirstBetTime  # 在开赛后的某个时间
-            self.firstBetCondition2 = self.gameTime < latestFirstBetTime
-            self.firstBetCondition3 = self.maxSmallPosition == self.smallPosition  # 防止盘口曾经到过更高
-            # 需要先有至少2个记录，再下注，为了保证条件3是真实的
-            self.firstBetCondition4 = len(self.history) > 1
-            self.firstBetCondition5 = balance > firstBetMoney + \
-                secondBetMoney  # 确保只是剩余的钱能够支付首注和补注
-            if self.firstBetCondition1 and self.firstBetCondition2 and self.firstBetCondition3 and self.firstBetCondition4 and self.firstBetCondition5:  # 正在下单操作写在这里
+    # 现在开始下注相关判断
+    def firstBetAction(self): 
+        # 还没有首注
+        if self.firstBet == False: 
+            # 开始条件判断 
+            self.firstBetCondition1 = self.gameTime > earliestFirstBetTime  # 迟于最早可以首注时间
+            self.firstBetCondition2 = self.gameTime < latestFirstBetTime # 早于最迟可以首注时间
+            self.firstBetCondition3 = self.maxSmallPosition == self.smallPosition  # 最大盘口就是现在盘口，防止盘口曾经到过更高
+            self.firstBetCondition4 = len(self.history) > 1 # 需要先有至少1个以上记录，再下注，为了保证条件3是真实的
+            self.firstBetCondition5 = balance > (firstBetMoney + secondBetMoney)  # 确保账上的钱能够支付首注和补注
+            # 如果上述条件都符合：正在下单操作
+            if self.firstBetCondition1 and self.firstBetCondition2 and self.firstBetCondition3 and self.firstBetCondition4 and self.firstBetCondition5:  
                 if autoBet:
                     print u" └──────────┴───┴─────┴─────┴────┴─────┴─────┴──────┴─────────────────────────"
                     with requests.Session() as s:

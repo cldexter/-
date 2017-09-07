@@ -65,3 +65,6 @@ def Information():
 		for report in reports:
 			print report,
 		print "\n"
+
+def display_offer(info):
+    
