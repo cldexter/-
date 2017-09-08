@@ -25,6 +25,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+from BeautifulSoup import BeautifulSoup
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -78,6 +79,7 @@ class Browser:
         self.browser = webdriver.PhantomJS(
             executable_path='C:\Python27\Scripts\phantomjs.exe', desired_capabilities=dcap)
         self.browser.set_page_load_timeout(60)  # 设定网页加载超时,超过了就不加载
+        self.time_out = 60
         # 保存浏览器的状态（避免重复加载）
         # "human"
         self.current_url = ""
@@ -85,23 +87,27 @@ class Browser:
         self.user_password = "onlyone"
         self.login = 0 # 刚开始没有登录
         
-
-    def browse(self,url):
+    def wbrowse(self,url):
         self.current_url = url
         self.browser.get(url)
+        # WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+        self.browser.save_screenshot("browse.png")
         print u"  ● 打开 " + self.current_url + " 成功"
-        self.browser.save_screenshot("log.png")
         
-    def login(self):
+    def wlogin(self):
         while True:
             # 确保当前
             if self.current_url == self.login_url:
+                print u"  ● 开始登录操作 "
                 self.browser.find_element_by_id("loginLink").click()
                 self.browser.find_element_by_id("myform:myformloginName").clear()
                 self.browser.find_element_by_id("myform:myformloginName").send_keys(self.user_name)
                 self.browser.find_element_by_id("myform:myformuserPassword").clear()
                 self.browser.find_element_by_id("myform:myformuserPassword").send_keys(self.user_password)
                 self.browser.find_element_by_id("myform:j_idt83").send_keys(Keys.ENTER)
+                time.sleep(10)
+                # WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                self.login = 1
                 self.browser.save_screenshot("login.png")
                 print u"  ● 登陆成功，用户名：" + self.user_name
                 break
@@ -109,22 +115,30 @@ class Browser:
                 self.browse(self.login_url)
                 continue
     
-    def balance(self):
-        while True:
-            # 确保当前连接是对的
-            if self.current_url == self.human_url:
-                self.browser.find_element_by_class_name('balance flft')
-                
+    def wbalance(self):
+        # 如果没有登录，先登录
+        if self.login:
+            while True:
+                # 确保当前连接是对的
+                if self.current_url == self.human_url:
+                    print u"  ● 抓取用户余额"
+                    soup = BeautifulSoup(self.browser.page_source)
+                    wbalance = soup.findAll(name = "span", attrs = {"class":"balance flft"})
+                    print wbalance
+                    break
+                else:
+                    self.wbrowse(self.balance_url)
+                    continue
             else:
-                self.browse(self.balance_url)
-                continue
-
+                return u"  ● 请先登录"
+        return wbalance
 
     def close(self):
         self.browser.quit()
 
 if __name__ == '__main__':
     wbrowser = Browser("http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php")
-    wbrowser.browse("http://www.wellbet228.net/zh-cn/sportsbook.php")
-    wbrowser.login()
+    wbrowser.wbrowse("http://www.wellbet228.net/zh-cn/sportsbook.php")
+    wbrowser.wlogin()
+    print wbrowser.wbalance()
     wbrowser.close()
