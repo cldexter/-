@@ -1,0 +1,98 @@
+{
+    "user_info" :{
+        "user_name": "sailzhen112233",
+        "password": "szn112233",
+        "mail": "nas77163@zasod.com"
+    },
+
+    "url_list" : {
+        "index": "http://www.jxfhomes.info/zh/index.php",
+        "login": "http://www.jxfhomes.info/zh/index.php",
+        "query": "http://sb-jxf.prdasbbwla1.com/zh-cn/OddsService/GetOdds",
+        "sportsbook": "http://www.jxfhomes.info/zh/sportsbook.php",
+        "sports_index": "http://sb-jxf.prdasbbwla1.com/zh-cn/Sport/Index",
+        "place": "http://sb-jxf.prdasbbwla1.com/zh-cn/BetslipService/PlaceBet",
+        "add": "http://sb-jxf.prdasbbwla1.com/zh-cn/BetslipService/Add"
+        
+    },
+
+    "url_params" : {
+        "login" : {       
+            "param_list" : {
+                "myform" : "myform",
+                "javax.faces.ViewState":"",
+                "myform:myformloginName":"",
+                "myform:myformuserPassword":"",
+                "javax.faces.source:myform":"j_idt24",
+                "javax.faces.partial.event":"click",
+                "javax.faces.partial.execute":"myform:j_idt24 @component",
+                "javax.faces.partial.render":"@component",
+                "org.richfaces.ajax.component":"myform:j_idt24",
+                "myform:j_idt24":"myform:j_idt24",
+                "rfExt":null,
+                "AJAX":"EVENTS_COUNT:1",
+                "javax.faces.partial.ajax":true     
+            },
+            "param_mapping" : {
+                "user_name" : "myform:myformloginName",
+                "password" : "myform:myformuserPassword"
+            }
+        },
+
+        "query_0" : {
+            "_" : "",
+            "sportId" : 1,
+            "pageType" : 1,
+            "programmeId" : 0,
+            "uiBetType" : "am",
+            "isFirstLoad" : true,
+            "displayView":2,
+            "oddsType":2,
+            "sortBy":1,
+            "MoreBetEvent":null
+        },
+
+        "query_1" : {
+            "_" : "",
+            "sportIds" : 1,
+            "pageType" : 3,
+            "programmeId" : 0,
+            "uiBetType" : "am",
+            "isFirstLoad" : true,
+            "displayView":2,
+            "oddsType":2,
+            "sortBy":1,
+            "MoreBetEvent":null
+        },
+
+        "query" : {
+            "_":"",
+            "sportIds":1,
+            "pageType":3,
+            "programmeId":0,
+            "uiBetType":"am",
+            "isFirstLoad":false,
+            "displayView":2,
+            "oddsType":2,
+            "sortBy":1,            
+            "MoreBetEvent":null,
+            "versions":""
+        },
+
+        "place": {
+            "ep": [
+                {
+                    "slid": "",
+                    "eid": "",
+                    "o": "",
+                    "hp": "",
+                    "s": "",
+                    "isi": true
+                }
+            ],
+            "sa": [],
+            "is": true
+        }
+
+    }
+}

@@ -90,7 +90,7 @@ class Browser:
     def wbrowse(self,url):
         self.current_url = url
         self.browser.get(url)
-        # WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+        WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
         self.browser.save_screenshot("browse.png")
         print u"  ● 打开 " + self.current_url + " 成功"
         
@@ -106,7 +106,7 @@ class Browser:
                 self.browser.find_element_by_id("myform:myformuserPassword").send_keys(self.user_password)
                 self.browser.find_element_by_id("myform:j_idt83").send_keys(Keys.ENTER)
                 time.sleep(10)
-                # WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
+                WebDriverWait(self.browser, self.time_out).until(EC.presence_of_element_located((By.ID, "footer")))
                 self.login = 1
                 self.browser.save_screenshot("login.png")
                 print u"  ● 登陆成功，用户名：" + self.user_name
@@ -132,6 +132,15 @@ class Browser:
             else:
                 return u"  ● 请先登录"
         return wbalance
+    
+    def locate(self): # 打开固定页面
+        if self.current_url == self.human_url:
+            print u"  ● 打开足球页面 "
+            self.browser.find_element_by_link_text('让球 / 大小')
+            time.sleep(10)
+            self.browser.save_screenshot("located.png")
+        else:
+            self.browse(self.human_url)
 
     def close(self):
         self.browser.quit()
@@ -140,5 +149,5 @@ if __name__ == '__main__':
     wbrowser = Browser("http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php","http://www.wellbet228.net/zh-cn/sportsbook.php")
     wbrowser.wbrowse("http://www.wellbet228.net/zh-cn/sportsbook.php")
     wbrowser.wlogin()
-    print wbrowser.wbalance()
+    wbrowser.locate()
     wbrowser.close()
