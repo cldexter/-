@@ -7,12 +7,6 @@
    Author: Dexter Chen
    Date：2017-09-06
 -------------------------------------------------
-   Development Note：
-   1.
--------------------------------------------------
-   Change Log:
-   2018-09-06: 
--------------------------------------------------
 #名词规定: 盘口position, 赔率odd, （盘口+赔率）=offer, offer下单后变成bet
 #大小写规定: 公共函数首字母大写,class里面的函数首字母小写,变量首字母小写,公共类首字母大写
 """
@@ -22,8 +16,6 @@ import sys
 import time
 from datetime import date, datetime, timedelta
 
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 # 全局变量，定义全局变量容器
 # 定时开始时间,格式2016-01-12 20:34:45
@@ -44,8 +36,6 @@ endTime = ""
 timeElapse = ""
 # 几个小时后，停止添加新offer实例，不是整个结束。只能手工整个结束
 runTime = 8
-# 服务器抓回来的信息容器
-leagues = []
 # 所有报告的容器，注意：报告不是随时打印在屏幕上的，而是收集在一起打印的
 reports = []
 # 文件储存位置
