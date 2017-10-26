@@ -7,9 +7,9 @@
    Author: Dexter Chen
    Date：2017-09-06
 -------------------------------------------------
+"""
 #名词规定: 盘口position, 赔率odd, （盘口+赔率）=offer, offer下单后变成bet
 #大小写规定: 公共函数首字母大写,class里面的函数首字母小写,变量首字母小写,公共类首字母大写
-"""
 
 import requests
 import sys
