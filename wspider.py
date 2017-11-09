@@ -16,6 +16,7 @@ import time
 from datetime import date, datetime, timedelta
 import wconfig
 import utilities as ut
+import agents
 
 reload(sys)
 sys.setdefaultencoding('UTF-8')
@@ -23,7 +24,7 @@ sys.setdefaultencoding('UTF-8')
 # 定义全局变量
 
 
-def get_data():  # 发送数据更新请求,更新后的数据存在全局变量中
+def get_raw_data():  # 发送数据更新请求,更新后的数据存在全局变量中
     # 选择哪个站点,吉祥坊和UED用的一套数据
     link = wconfig.siteUrls['odds']
     # 定义链接请求参数，已调好，不要动
@@ -36,13 +37,18 @@ def get_data():  # 发送数据更新请求,更新后的数据存在全局变量
         "pageType": wconfig.pageType,
         "sportId": wconfig.sportId
     }
+    tries = 2
     while tries > 0:
         try:
             # 抓回来的是解码json生成的dict文件
-            response = requests.get(link, data=payload).json()
+            response = requests.get(link, data=payload, headers=agents.get_header()).json()
+            break
         except Exception,e:
-
+            tries -= 1
     # 重新合成抓回来的数据
+    iotLeagues = []
+    notLeagues = []
+    
     if 'egs' in response['i-ot'].keys():
         # 滚球信息dict,response的子集
         iotLeagues = response['i-ot']['egs']
@@ -57,7 +63,7 @@ def get_data():  # 发送数据更新请求,更新后的数据存在全局变量
 # 筛选offer交给函数，买不买交给对象
 
 
-def clean_data(leagues):
+def get_all_offers(leagues):
     offer_list = []
     for league in leagues:
         leagueK = league['c']['k']  # 联赛编号
@@ -96,4 +102,4 @@ def filter_small_offer(offer_list):
 
 
 if __name__ == "__main__":
-    print clean_data(get_data())
+    print get_all_offers(get_raw_data())

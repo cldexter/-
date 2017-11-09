@@ -45,3 +45,30 @@ isFirstLoad = "true"
 # 标记两种数据更新请求: ture,只请求更新inplay区域的; false,更新整页
 isInplay = "true"
 
+def set_config(mode):
+    if mode == "1":#浏览模式:和自动一样,只是不真正下单,用于检验程序的可行性
+        mimic = True
+        break
+    elif mode == "2":#自动完成判断和下单
+        autoBet = True
+        autoBetNeedConfirm = True
+        break
+    elif mode == "3":#自动完成判断,下单前要确认,回车才下
+        autoBet = True
+        break
+    elif mode == "4":#最大准许条件,让程序试错
+        showError = True
+        mimic = True
+        loopTime = 10#把刷新时间加快
+        writeLoop = 3#把记录所需循环数减少
+        useLeagueWhiteList = False #不使用白名单
+        mimicWaitTime = 0#下单不等待
+        secondBetWaitTime = 40
+        earliestAddTime = "00:00" #最早加入
+        latestAddTime = "80:00" #最迟加入
+        latestUpdateTime = "85:00" #最迟更新
+        earliestFirstBetTime = "00:00" #最早首注
+        latestFirstBetTime = "85:00" #最迟首注
+        earlistSecondBetTime = "00:00"#最早补注
+        latestSecondBetTime = "85:00" #最迟补注
+        break
