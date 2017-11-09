@@ -27,16 +27,27 @@ def time_str(type="full", delta_min=0): # 自然时间的时间戳
         time_format = '%Y-%m-%d %X'
     if type == "time":  # 只有时间
         time_format = "%X"
+    if type == "year": # 年份
+        time_format = "%Y"
     time_str = datetime.datetime.now()
     time = time_str + datetime.timedelta(minutes=delta_min)
     return time.strftime(time_format)
+
+
+def time_str_converter(date_str_short, time_str_short): # 把 8/10 这样的时间转为标准的
+    month_day = date_str_short.split("/")
+    day = month_day[0]
+    month = month_day[1]
+    year = time_str("year")
+    return year + "-" + month + "-" + day + " " + time_str_short + ":00" # 00 是秒，原始的时间总没有
+    
 
 
 def time_object(time_str):
     return time.strptime(time_str, "%Y-%m-%d %X")
 
 
-def time_str_duration(early_time_str, late_time_str, time_unit="day"): # 计算两个时间str之间的时间差，默认输出s，也可输出min
+def time_str_duration(early_time_str, late_time_str, time_unit="hour"): # 计算两个时间str之间的时间差，默认输出s，也可输出min
     early_time_object = datetime.datetime.strptime(early_time_str, "%Y-%m-%d %X")
     late_time_object = datetime.datetime.strptime(late_time_str, "%Y-%m-%d %X")
     duration_delta = late_time_object - early_time_object
@@ -62,9 +73,6 @@ def dict_replace(data, re_dict):
 
 # 用正则表达式进行，正则表达式可以不断加
 re_html = "</?\w+[^>]*>\s?"  # 清除所有html标签
-re_label = "label=\"\"[\w\s]*?\"\">?\s?"  # 清除非html标签
-re_nlmcatagory = "nlmcategory=\"\"[\s\w]+\"\">?\s?"  # 清除nlm标签
-re_email_pm = "Electronic address:.*"
 re_email_general = "[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
 
 
@@ -81,6 +89,8 @@ def cur_file_dir():  # 获取脚本路径
 
 
 if __name__ == '__main__':
-    print time_str_duration("2010-10-10 10:10:10", "2010-10-10 11:10:10")
-    print time_str("full")
-    print time_str("full", 30)
+    # print time_str_duration("2010-10-10 10:10:10", "2010-10-10 11:10:10")
+    # print time_str("full")
+    # print time_str("full", 30)
+    # print time_str("year")
+    print time_str_duration(time_str("full"), time_str_converter("10/10", "12:30"))

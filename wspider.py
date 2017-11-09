@@ -65,22 +65,22 @@ def get_raw_data():  # 发送数据更新请求,更新后的数据存在全局�
 # 以下筛选可以关注的offer,目的是把所有可以投注的offer筛出来，然后让每个offer实体各自去更新
 # 筛选offer交给函数，买不买交给对象
 
-
 def save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore):
     gameKs = mh.read_gameK_all()
     if not gameK in gameKs:
-        game_new = {"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
+        game_new = {"ctime":ut.time_str("full"), "lastUpdate": ut.time_str("full"), "gameStatus":0,"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
         mh.add_record(game_new, "game")
         msg.msg("new game", hostTeam + awayTeam, "added", "succ", "info", msg.display, msg.log)
     else:
-        game_update = {"gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
+        game_update = {"lastUpdate": ut.time_str("full"), "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
         mh.update_game_record(gameK, game_update)
         msg.msg("existed game", hostTeam + awayTeam, "updated", "succ", "info", msg.display, msg.log)
 
-def new_offer():
-    pass
 
-def update_game():
+
+
+
+def new_offer():
     pass
 
 def update_offer():
@@ -122,6 +122,10 @@ def get_all_offers(leagues):
 
 
 def filter_small_offer(all_offer_list):
+    pass
+
+
+def filter_data(offer):
     pass
 
 
