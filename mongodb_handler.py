@@ -7,38 +7,18 @@
    Author: Dexter Chen
    Date：2017-09-28
 -------------------------------------------------
-   Development Note：
-   1.为了减少其它函数复杂性，所有BSON构成在这里进行
--------------------------------------------------
-   Change Log:
-
--------------------------------------------------
-   格式：数据库名称
-   论文内容在["papers"]["count"]（不分项目）
-   项目在["papers"]["project"]
-   任务在["papers"]["task"]
-   运行日志在["papers"]["log"]
--------------------------------------------------
 """
 
 from pymongo import *
-
-my_record = {"pmid": "200000", "name": "dexter", "hello": "world"}
+import utilities as ut
 
 client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
+# 获取各个集合路径; 注意这里的db不是database，是collection
 
 
-def get_db(data_type):  # 获取各个集合路径
-    if data_type == "content":
-        database = client["papers"]["content"]
-    elif data_type == "project":
-        database = client["papers"]["project"]
-    elif data_type == "log":
-        database = client["papers"]["log"]
-    elif data_type == "task":
-        database = client["papers"]["task"]
-    elif data_type == "journal":
-        database = client["papers"]["journal"]
+def get_db(data_type):
+    if data_type in ["game", "offer", "bet", "log"]:
+        database = client["wellbet"][data_type]
     else:
         database = "error"
     return database
@@ -62,52 +42,59 @@ def add_record(data, data_type):
     get_db(data_type).insert_one(data)
 
 
-# 对杂志的操作
-def read_journal_name_all():
-    journals = []
-    for record in get_db("journal").find():
-        journals.append(record['journal'])
-    return journals
+def update_game_record(gameK, data):
+    get_db("game").update({"gameK": gameK}, {"$set": data})    
 
 
-def read_journal_detail(journal_name):
-    record = get_db("journal").find_one({"journal":journal_name})
-    if record:
-        data = record['journal'], record['if'], record['jzone']
+# 读取所有gameK
+def read_gameK_all():
+    records = []
+    for record in get_db("game").find():
+        records.append(record["gameK"])
+    return records
+
+# 增加log
+def add_new_log(when, who, identifier, action, result, info_type):
+    data = {"ctime": when, "who": who, "identifier": identifier,
+            "action": action, "result": result, "info_type": info_type}
+    get_db('log').insert_one(data)
+
+
+def read_last_run():
+    data = get_db("log").find_one(
+        {"who": "task", "action": "finish", "result": "succ", "info_type": "important"})["ctime"]
     return data
 
-def add_journal(journal_name, impact_factor, journal_zone):
-    data = {"journal":journal_name, "if":impact_factor, "jzone":journal_zone}
-    get_db("journal").insert_one(data)
+
+def read_address_many(number):  # 读取地址
+    record = []
+    for data in get_db("apartment").find({"status": 1}).limit(number):
+        record.append([data["apt_id"], data["city"], data['district'] +
+                       data['sub_district'] + data["street"] + data["zone"]])
+    return record
 
 
-# 对论文指定操作部分
-def read_pmid_all():
-    pmids = []
-    for record in get_db("content").find():
-        pmids.append(record['pmid'])
-    return pmids
+def update_geocode(apt_id, apt_lat, apt_lng):
+    get_db("apartment").update({"apt_id": apt_id}, {
+        "$set": {"status": 2, "apt_lat": apt_lat, "apt_lng": apt_lng}})
 
 
-def add_new_content(project, sstr, ctime, source, pmid, title, author, journal, ojournal, impact_factor, jzone, issue, abstract, keyword, institue, flink): # 新增一个论文记录
-    data = {"project": project, "sstr": sstr, "ctime": ctime, "status": 1, "source": source, "pmid": pmid, "title": title, "author": author, "journal": journal, "ojournal":ojournal, "if": impact_factor, "jzone": jzone,"issue": issue, "abstract": abstract, "keyword": keyword, "institue": institue, "irank": "", "country": "", "flink": flink, "usability": "", "relativeness": "", "quality": "", "highlight": "", "comment": ""}
-    get_db("content").insert_one(data)
+def add_location(city, address, lat, lng):
+    data = {"city": city, "address": address,
+            "lat": lat, "lng": lng}
+    get_db("location").insert_one(data)
 
 
-def update_content(pmid, new_content):  # 更新论文数据模块，注意new_content不需要双引号
-    get_db("content").update_one({'pmid': pmid}, {"$set": new_content})
+def read_location(city, address):
+    data = get_db("location").find_one({"city": city, "address": address})
+    if data:
+        return data['lat'], data['lng']
 
 
-def del_content(pmid):
-    get_db("content").delete_one({'pmid': pmid})
-
-
-# 对log做制定操作
-def add_new_log(task, ctime, loginfo, logtype):
-    data = {"task":task, "ctime":ctime, "loginfo":loginfo, "logtype":logtype}
-    get_db('log').insert_one(data)
+def upgrade_status():
+    get_db("apartment").update({'_id': {'$exists': True}}, {
+        '$set': {"city": "广州", "source": "中原地产"}}, multi=True)
 
 
 if __name__ == "__main__":
     print read_journal_detail('JOURNAL OF FOOD SAFETY')
-

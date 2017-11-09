@@ -8,14 +8,10 @@
    Date：2017-09-01
 -------------------------------------------------
    Development Note：
-   1.接收信息，根据信息种类，选择打印颜色与存留时间
+   1.最上方显示统计数据，状态数据
+   2.接收信息，根据信息种类，选择打印颜色与存留时间
 -------------------------------------------------
-   Change Log:
-   2017-09-14：重新复活。输出不涉及md，html和web
--------------------------------------------------
-   Message 属性：
-   颜色样式 + 显示时间（1，3，5） + 优先级（0-4越小越重要）
--------------------------------------------------
+
 """
 import sys
 import os
@@ -27,50 +23,36 @@ sys.setdefaultencoding('utf8')
 
 init(autoreset=True)
 
-info_type_def = {
-    "info":(Back.GREEN + Fore.WHITE, 3, 3),
-    "warning":(Back.YELLOW + Fore.WHITE, 10, 1),
-    "error":(Back.RED + Fore.WHITE, 10, 1),
-    "notice":(Back.LIGHTCYAN_EX + Fore.BLACK, 5, 2),
-    "time_stamp":(Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX, 5, 4)
+color_code = {
+    "info":(Back.GREEN + Fore.BLACK),
+    "important":(Back.BLACK + Fore.WHITE),
+    "error":(Back.RED + Fore.LIGHTWHITE_EX),
+    "notice":(Back.YELLOW + Fore.BLACK),
+    "debug":(Back.LIGHTCYAN_EX + Fore.BLACK),
+    "time_stamp":(Back.LIGHTBLACK_EX + Fore.LIGHTWHITE_EX)
 }
 
 message_set = []
 
-def add_new_display(ctime, info, info_type):
-    print ctime, type(ctime), info, type(info), info_type, type(info_type)
-    print(info_type_def[time_stamp] + "[" + ctime + "]"),
-    print(info_type_def[info_type][0] + "[" + info_type + "]"),
-    print info
-
-class Message:
-    def __init__(info, info_type, ctime):
-        self.info = info
-        self.info_type = info_type
-        self.ctime = ctime
-        self.end_time = ut.time_str("full",info_type_def[self.info_type][1]/3600)
-        self.is_logged = 0
-
-    def display():
-        print(info_type_def["time_stamp"] + "[" + self.ctime + "]"),
-        print(info_type_def[self.info_type][0] + "[" + self.info_type + "]"),
-        print info
-
-    def log_error():
-        if self.info_type == "error":
-            rl.run_log(self.info, self.info_type, self.ctime)
-            self.is_logged = 1
-
-    def update():
-        if not self.is_logged:
-            self.log_error()
-        if ut.time_str < self.end_time:
-            self.display()
-        else:
-            #delete self from list
-            pass
+def add_new_display(when, who, identifier, action, result, info_type):
+    print(color_code["time_stamp"] + " [" + when + "] "),
+    print(color_code[info_type] + " [" + info_type + "] "),
+    print who, identifier, action, result
 
 
+def time_box():# 把时间相关的列出来
+    print " ---------------------------------------------------------------"
+    print " │     Current Time    │      Start Time     │   Elapsed Time  │"
+    print " │ " + ut.time_str("full") + " │ " + ut.time_str("full") + " │ " + "  ?? Hr ?? min " + " │"
+    print " ---------------------------------------------------------------"
+
+def project_menu():
+    pass
+    
 
 if __name__ == '__main__':
-    add_new_display("dexter is here", "info", "1991-12-13 03:45:23")
+    add_new_display("10:10:10", "dexter", "121131311", "is here", "succ", "debug")
+    add_new_display("10:10:10", "dexter", "121131311", "is here", "succ", "notice")
+    add_new_display("10:10:10", "dexter", "121131311", "is here", "succ", "info")
+    add_new_display("10:10:10", "dexter", "121131311", "is here", "succ", "important")
+    add_new_display("10:10:10", "dexter", "121131311", "is here", "succ", "error")

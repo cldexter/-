@@ -8,7 +8,8 @@
    Date：2017-10-20
 -------------------------------------------------
 """
-
+display_protocol = 5  # 定义哪种显示方法
+log_protocol = 2  # 定义哪种记录方法
 # 全局变量，如下设定不要变
 # sportId:足球
 sportId = 1
@@ -32,12 +33,12 @@ oddsType = 2
 sortBy = 2
 
 siteUrls = {
-    "odds": "http://sb-jxf.prdasbbwla1.com/zh-cn/OddsService/GetOdds?", # 信息页
-    "login": "http://www.wellbet228.net/zh-cn/sportsbook.php", # 登录页
-    "add": "http://www.wellbet228.net/zh-cn/sportsbook.php", # 添加页
-    "bet": "http://www.wellbet228.net/zh-cn/sportsbook.php", # 下注页
-    "balance": "http://www.wellbet228.net/zh-cn/uc/user/user_info.php", # 剩余金额
-    "human": "http://www.wellbet228.net/zh-cn/sportsbook.php" # 正常浏览
+    "odds": "http://sb-jxf.prdasbbwla1.com/zh-cn/OddsService/GetOdds?",  # 信息页
+    "login": "http://www.wellbet228.net/zh-cn/sportsbook.php",  # 登录页
+    "add": "http://www.wellbet228.net/zh-cn/sportsbook.php",  # 添加页
+    "bet": "http://www.wellbet228.net/zh-cn/sportsbook.php",  # 下注页
+    "balance": "http://www.wellbet228.net/zh-cn/uc/user/user_info.php",  # 剩余金额
+    "human": "http://www.wellbet228.net/zh-cn/sportsbook.php"  # 正常浏览
 }
 
 # 是否第一次读取，如果是，强制获得球队名称等信息。未来改为“非第一次”加快速度
@@ -45,30 +46,30 @@ isFirstLoad = "true"
 # 标记两种数据更新请求: ture,只请求更新inplay区域的; false,更新整页
 isInplay = "true"
 
+
 def set_config(mode):
-    if mode == "1":#浏览模式:和自动一样,只是不真正下单,用于检验程序的可行性
+    if mode == "1":  # 浏览模式:和自动一样,只是不真正下单,用于检验程序的可行性
         mimic = True
-        break
-    elif mode == "2":#自动完成判断和下单
+
+    elif mode == "2":  # 自动完成判断和下单
         autoBet = True
         autoBetNeedConfirm = True
-        break
-    elif mode == "3":#自动完成判断,下单前要确认,回车才下
+
+    elif mode == "3":  # 自动完成判断,下单前要确认,回车才下
         autoBet = True
-        break
-    elif mode == "4":#最大准许条件,让程序试错
+
+    elif mode == "4":  # 最大准许条件,让程序试错
         showError = True
         mimic = True
-        loopTime = 10#把刷新时间加快
-        writeLoop = 3#把记录所需循环数减少
-        useLeagueWhiteList = False #不使用白名单
-        mimicWaitTime = 0#下单不等待
+        loopTime = 10  # 把刷新时间加快
+        writeLoop = 3  # 把记录所需循环数减少
+        useLeagueWhiteList = False  # 不使用白名单
+        mimicWaitTime = 0  # 下单不等待
         secondBetWaitTime = 40
-        earliestAddTime = "00:00" #最早加入
-        latestAddTime = "80:00" #最迟加入
-        latestUpdateTime = "85:00" #最迟更新
-        earliestFirstBetTime = "00:00" #最早首注
-        latestFirstBetTime = "85:00" #最迟首注
-        earlistSecondBetTime = "00:00"#最早补注
-        latestSecondBetTime = "85:00" #最迟补注
-        break
+        earliestAddTime = "00:00"  # 最早加入
+        latestAddTime = "80:00"  # 最迟加入
+        latestUpdateTime = "85:00"  # 最迟更新
+        earliestFirstBetTime = "00:00"  # 最早首注
+        latestFirstBetTime = "85:00"  # 最迟首注
+        earlistSecondBetTime = "00:00"  # 最早补注
+        latestSecondBetTime = "85:00"  # 最迟补注

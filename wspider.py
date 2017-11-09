@@ -17,6 +17,9 @@ from datetime import date, datetime, timedelta
 import wconfig
 import utilities as ut
 import agents
+import mongodb_handler as mh
+import message as msg
+
 
 reload(sys)
 sys.setdefaultencoding('UTF-8')
@@ -63,8 +66,29 @@ def get_raw_data():  # 发送数据更新请求,更新后的数据存在全局�
 # 筛选offer交给函数，买不买交给对象
 
 
+def save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore):
+    gameKs = mh.read_gameK_all()
+    if not gameK in gameKs:
+        game_new = {"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
+        mh.add_record(game_new, "game")
+        msg.msg("new game", hostTeam + awayTeam, "added", "succ", "info", msg.display, msg.log)
+    else:
+        game_update = {"gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
+        mh.update_game_record(gameK, game_update)
+        msg.msg("existed game", hostTeam + awayTeam, "updated", "succ", "info", msg.display, msg.log)
+
+def new_offer():
+    pass
+
+def update_game():
+    pass
+
+def update_offer():
+    pass
+
+
 def get_all_offers(leagues):
-    offer_list = []
+    all_offer_list = []
     for league in leagues:
         leagueK = league['c']['k']  # 联赛编号
         leagueName = league['c']['n']  # 联赛名字
@@ -78,6 +102,7 @@ def get_all_offers(leagues):
             hostTeamScore = game['i'][10]  # 主队得分情况
             awayTeamScore = game['i'][11]  # 客队得分情况
             gameHalf = game['i'][12]  # 上下半场,中场TH,用于判断比赛是否开始
+            save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore)
             if 'ou' in game['o'].keys():  # 如果有买大小的盘口的话
                 offerNumber = len(game['o']['ou']) / 8  # 到底有多少组offer
                 i = 0
@@ -92,14 +117,13 @@ def get_all_offers(leagues):
                     # 买小（smallOffer）是我们玩的主要东西
                     smallOffer = {"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore,
                                   "bigOddId": bigOddsNumber, "bigPosition": bigPosition, "bigOdds": bigOdds, "smallOddId": smallOddsNumber, "smallPosition": smallPosition, "smallOdds": smallOdds}
-                    offer_list.append(smallOffer)
+                    all_offer_list.append(smallOffer)
                     i += 1
-    return offer_list
 
 
-def filter_small_offer(offer_list):
+def filter_small_offer(all_offer_list):
     pass
 
 
 if __name__ == "__main__":
-    print get_all_offers(get_raw_data())
+    get_all_offers(get_raw_data())
