@@ -19,6 +19,7 @@ import utilities as ut
 import agents
 import mongodb_handler as mh
 import message as msg
+import dictionary as dic
 
 
 reload(sys)
@@ -65,19 +66,16 @@ def get_raw_data():  # 发送数据更新请求,更新后的数据存在全局�
 # 以下筛选可以关注的offer,目的是把所有可以投注的offer筛出来，然后让每个offer实体各自去更新
 # 筛选offer交给函数，买不买交给对象
 
-def save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore):
+def save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDateTime, gameTime, gameHalf, hostTeamScore, awayTeamScore):
     gameKs = mh.read_gameK_all()
     if not gameK in gameKs:
-        game_new = {"ctime":ut.time_str("full"), "lastUpdate": ut.time_str("full"), "gameStatus":0,"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
+        game_new = {"ctime":ut.time_str("full"), "lastUpdate": ut.time_str("full"), "gameStatus":0,"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDateTime": gameDateTime, "gameTime":gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
         mh.add_record(game_new, "game")
         msg.msg("new game", hostTeam + awayTeam, "added", "succ", "info", msg.display, msg.log)
     else:
         game_update = {"lastUpdate": ut.time_str("full"), "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore}
         mh.update_game_record(gameK, game_update)
         msg.msg("existed game", hostTeam + awayTeam, "updated", "succ", "info", msg.display, msg.log)
-
-
-
 
 
 def new_offer():
@@ -101,24 +99,36 @@ def get_all_offers(leagues):
             gameTime = game['i'][5]  # 现在进行到多少时间,如果还没有开始就显示什么时候开始
             hostTeamScore = game['i'][10]  # 主队得分情况
             awayTeamScore = game['i'][11]  # 客队得分情况
-            gameHalf = game['i'][12]  # 上下半场,中场TH,用于判断比赛是否开始
-            save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDate, gameTime, gameHalf, hostTeamScore, awayTeamScore)
-            if 'ou' in game['o'].keys():  # 如果有买大小的盘口的话
-                offerNumber = len(game['o']['ou']) / 8  # 到底有多少组offer
-                i = 0
-                for item in range(0, offerNumber):  # 生成多个bet offer
-                    bigPosition = game['o']['ou'][i * 8 + 1]  # 买大盘口[1]
-                    # 买小盘口[3]和主队盘口应该完全一样
-                    smallPosition = game['o']['ou'][i * 8 + 3]
-                    bigOddsNumber = game['o']['ou'][i * 8 + 4]  # 买大赔率编号[4]
-                    bigOdds = game['o']['ou'][i * 8 + 5]  # 买大赔率[5]
-                    smallOddsNumber = game['o']['ou'][i * 8 + 6]  # 买小赔率编号[6]
-                    smallOdds = game['o']['ou'][i * 8 + 7]  # 买小赔率[7]
-                    # 买小（smallOffer）是我们玩的主要东西
-                    smallOffer = {"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore,
-                                  "bigOddId": bigOddsNumber, "bigPosition": bigPosition, "bigOdds": bigOdds, "smallOddId": smallOddsNumber, "smallPosition": smallPosition, "smallOdds": smallOdds}
-                    all_offer_list.append(smallOffer)
-                    i += 1
+
+            if hostTeamScore == "": # 没有得分的，说明日期是比赛开始日期 
+                gameDateTime = ut.time_str_converter(gameDate, gameTime) 
+                gameTime = "00:00"
+            else:
+                gameDateTime = "now"
+
+            gameHalfRaw = game['i'][12]  # 上下半场,中场TH,用于判断比赛是否开始
+            if gameHalfRaw == "" and hostTeamScore != "": # 比赛已经开始了
+                gameHalf = "暂停"
+            else:
+                gameHalf = ut.dict_replace(gameHalfRaw, dic.dict_game_stage)
+                
+            save_game_data(leagueName, hostTeam, awayTeam, leagueK, gameK, gameDateTime, gameTime, gameHalf, hostTeamScore, awayTeamScore)
+            # if 'ou' in game['o'].keys():  # 如果有买大小的盘口的话
+            #     offerNumber = len(game['o']['ou']) / 8  # 到底有多少组offer
+            #     i = 0
+            #     for item in range(0, offerNumber):  # 生成多个bet offer
+            #         bigPosition = game['o']['ou'][i * 8 + 1]  # 买大盘口[1]
+            #         # 买小盘口[3]和主队盘口应该完全一样
+            #         smallPosition = game['o']['ou'][i * 8 + 3]
+            #         bigOddsNumber = game['o']['ou'][i * 8 + 4]  # 买大赔率编号[4]
+            #         bigOdds = game['o']['ou'][i * 8 + 5]  # 买大赔率[5]
+            #         smallOddsNumber = game['o']['ou'][i * 8 + 6]  # 买小赔率编号[6]
+            #         smallOdds = game['o']['ou'][i * 8 + 7]  # 买小赔率[7]
+            #         # 买小（smallOffer）是我们玩的主要东西
+            #         smallOffer = {"leagueName": leagueName, "hostTeam": hostTeam, "awyTeam": awayTeam, "leagueK": leagueK, "gameK": gameK, "gameDate": gameDate, "gameTime": gameTime, "gameHalf": gameHalf, "hostTeamScore": hostTeamScore, "awayTeamScore": awayTeamScore,
+            #                       "bigOddId": bigOddsNumber, "bigPosition": bigPosition, "bigOdds": bigOdds, "smallOddId": smallOddsNumber, "smallPosition": smallPosition, "smallOdds": smallOdds}
+            #         all_offer_list.append(smallOffer)
+            #         i += 1
 
 
 def filter_small_offer(all_offer_list):
