@@ -17,7 +17,7 @@ client = MongoClient('mongodb://localhost:27017/')  # 固定的不要变动
 
 
 def get_db(data_type):
-    if data_type in ["game", "offer", "bet", "log"]:
+    if data_type in ["game", "offer", "bet", "log", "status"]:
         database = client["wellbet"][data_type]
     else:
         database = "error"
@@ -38,19 +38,19 @@ def read_record_all(data_type):  # 获取某集合所有数据
     return records
 
 
-def add_record(data, data_type):
+def add_game_record(data, data_type):
     get_db(data_type).insert_one(data)
 
 
-def update_game_record(gameK, data):
-    get_db("game").update({"gameK": gameK}, {"$set": data})    
+def update_game_record(game_k, data):
+    get_db("game").update({"game_k": game_k}, {"$set": data})    
 
 
-# 读取所有gameK
-def read_gameK_all():
+# 读取所有game_k
+def read_game_k_all():
     records = []
     for record in get_db("game").find():
-        records.append(record["gameK"])
+        records.append(record["game_k"])
     return records
 
 # 增加log
@@ -91,10 +91,6 @@ def read_location(city, address):
         return data['lat'], data['lng']
 
 
-def upgrade_status():
-    get_db("apartment").update({'_id': {'$exists': True}}, {
-        '$set': {"city": "广州", "source": "中原地产"}}, multi=True)
-
 
 if __name__ == "__main__":
-    print read_journal_detail('JOURNAL OF FOOD SAFETY')
+    pass
